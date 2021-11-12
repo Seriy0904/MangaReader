@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">MangaReader</string>
+    <string name="page_text">%d/%d</string>
+</resources>
