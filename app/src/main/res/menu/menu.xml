@@ -2,6 +2,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:title="Выбрать мангу"
         android:id="@+id/selectManga"/>
-    <item android:title="Сохранить мангу"
-        android:id="@+id/saveManga"/>
+    <item android:title="Читаемые манги"
+        android:id="@+id/savedManga"/>
 </menu>
