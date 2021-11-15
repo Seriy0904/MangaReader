@@ -1,11 +1,10 @@
 package dev.seriy0904.mangareader
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.net.toUri
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dev.seriy0904.mangareader.adapter.FilesListAdapter
@@ -21,7 +20,9 @@ class SavedMangaActivity : AppCompatActivity() {
             val mainDir = File(
                 getExternalFilesDir(null),
                 "Манга"
-            ).listFiles()
+            ).listFiles().sortedBy { it.name }
+            Log.d("MyTag", "Pos: $position")
+            Log.d("MyTag", "Pos: ${mainDir[0].name}")
             if (mainDir != null) {
                 if (!selectManga) startForm(mainDir[position])
                 else {
@@ -31,20 +32,24 @@ class SavedMangaActivity : AppCompatActivity() {
                         )
                     ) {
                         AlertDialog.Builder(this@SavedMangaActivity)
-                            .setCancelable(true).setTitle("Вы уже читаете мангу, уверены что хотите начать новую")
+                            .setCancelable(true)
+                            .setTitle("Вы уже читаете мангу, уверены что хотите начать новую")
                             .setPositiveButton(
                                 "Да, уверен"
                             ) { _, _ ->
-                                val mainActivity = Intent(this@SavedMangaActivity, MainActivity::class.java)
-                                mainActivity.putExtra("SavedImages", mainDir[modelList[0].dirParent ?: 0])
+                                val mainActivity =
+                                    Intent(this@SavedMangaActivity, MainActivity::class.java)
+                                mainActivity.putExtra(
+                                    "SavedImages",
+                                    mainDir[modelList[0].dirParent ?: 0]
+                                )
                                 mainActivity.putExtra("SavedMangaChapter", position)
                                 mainActivity.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
                                 startActivity(mainActivity)
                             }.setNegativeButton("Нет, отмена") { dial, _ -> dial.cancel() }.show()
-                    }
-                    else{
+                    } else {
                         val mainActivity = Intent(this@SavedMangaActivity, MainActivity::class.java)
-                        mainActivity.putExtra("SavedImages", mainDir[modelList[0].dirParent ?: 0])
+                        mainActivity.putExtra("SavedImages", mainDir[modelList[0].dirParent])
                         mainActivity.putExtra("SavedMangaChapter", position)
                         mainActivity.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
                         startActivity(mainActivity)
@@ -56,25 +61,35 @@ class SavedMangaActivity : AppCompatActivity() {
     })
 
 
-    private fun startForm(mainDir: File) {
+    private fun startForm(dirFile: File) {
         modelList.clear()
-        for (i in mainDir.listFiles()) {
+        val mainDir = File(getExternalFilesDir(null), "Манга").listFiles().sortedBy { it.name }
+        for (i in dirFile.listFiles()) {
             var chapterCount = 0
             for (y in i.listFiles()) {
                 chapterCount++
             }
-            if (mainDir.name == "Манга") modelList.add(FilesListModel(i.name, "$chapterCount Глав"))
+            if (dirFile.name == "Манга") modelList.add(
+                FilesListModel(
+                    i.name,
+                    "$chapterCount Глав",
+                    -1
+                )
+            )
             else modelList.add(
                 FilesListModel(
                     i.name,
                     "$chapterCount Страниц",
-                    File(getExternalFilesDir(null), "Манга").listFiles().indexOf(mainDir)
+                    mainDir.indexOf(dirFile)
                 )
             )
         }
-        val cloneModelList = modelList.clone() as ArrayList<FilesListModel>
-        modelList.clear()
-        modelList.addAll(cloneModelList.sortedBy { it.mangaName })
+        if (dirFile.parentFile == File(getExternalFilesDir(null), "Манга")) {
+            Log.d("MyTag", "True")
+            val cloneModelList = modelList.clone() as ArrayList<FilesListModel>
+            modelList.clear()
+            modelList.addAll(cloneModelList.sortedBy { it.mangaName })
+        }
         adapter.setList(modelList)
     }
 

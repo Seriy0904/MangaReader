@@ -134,6 +134,7 @@ class MainActivity : AppCompatActivity() {
 //        } else {
             if (bitmapArray.size > chapter && page < bitmapArray[chapter].size && page >= 0) {
                 mangaImage.setImageBitmap(bitmapArray[chapter][page])
+                Log.d("MyTag","Not work:${pathArray.last()}")
                 pageTextView.text =
                     getString(R.string.page_text, page, bitmapArray[chapter].size - 1)
                 pageTextView.visibility = View.VISIBLE
@@ -285,7 +286,9 @@ class MainActivity : AppCompatActivity() {
             opts.inSampleSize = 1
             opts.inPreferredConfig = Bitmap.Config.RGB_565
             for (i in pathArray[chapterPos]) {
-                bitmapArray[chapterPos].add(BitmapFactory.decodeFile(i, opts))
+                val bmp = BitmapFactory.decodeFile(i,opts)
+                bitmapArray[chapterPos].add(bmp)
+                Log.d("MyTag","Bmp: $i")
             }
         }
     }
