@@ -7,8 +7,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.os.FileUtils
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -25,6 +27,7 @@ import androidx.core.net.toUri
 import dev.seriy0904.mangareader.TinyDB.TinyDB
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.util.zip.ZipInputStream
 
@@ -134,7 +137,7 @@ class MainActivity : AppCompatActivity() {
 //        } else {
             if (bitmapArray.size > chapter && page < bitmapArray[chapter].size && page >= 0) {
                 mangaImage.setImageBitmap(bitmapArray[chapter][page])
-                Log.d("MyTag","Not work:${pathArray.last()}")
+//                Log.d("MyTag","Not work:${pathArray.last()}")
                 pageTextView.text =
                     getString(R.string.page_text, page, bitmapArray[chapter].size - 1)
                 pageTextView.visibility = View.VISIBLE
@@ -227,7 +230,6 @@ class MainActivity : AppCompatActivity() {
                 if (p != null) {
                     bitmapArray[i].add(p)
                     saveImage(p, ze.name, File(uri[i].path).name)
-                    Log.d("MyTag", "Pos: $i")
                 }
                 ze = zipFile.nextEntry
             }
@@ -248,7 +250,12 @@ class MainActivity : AppCompatActivity() {
         val chapterDir = File(mangaDir, chapterWord)
         chapterDir.mkdir()
         val file = File(chapterDir, fileName)
-        file.writeBytes(bmp.convertToByteArray())
+        val fous = FileOutputStream(file)
+        bmp.compress(Bitmap.CompressFormat.PNG,100,fous)
+        fous.close()
+//        MediaStore.Images.Media.insertImage(contentResolver,file.absolutePath,file.name,"")
+        Log.d("MyTag","$fileName created")
+//        file.writeBytes(bmp.convertToByteArray())
     }
 
     private fun Bitmap.convertToByteArray(): ByteArray {
