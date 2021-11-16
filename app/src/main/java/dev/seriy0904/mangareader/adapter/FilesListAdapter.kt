@@ -21,7 +21,7 @@ class FilesListAdapter(val cl:FileClick) : RecyclerView.Adapter<FilesListAdapter
         return ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.files_item, parent, false))
     }
 
-    fun setList(newList:ArrayList<FilesListModel>){
+    fun setList(newList:List<FilesListModel>){
         model.clear()
         model.addAll(newList.sortedBy {it.mangaName})
         notifyDataSetChanged()

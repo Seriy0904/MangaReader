@@ -7,10 +7,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
-import android.os.FileUtils
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -24,10 +22,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import com.google.common.io.ByteStreams
 import dev.seriy0904.mangareader.TinyDB.TinyDB
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
+import java.io.*
 import java.nio.ByteBuffer
 import java.util.zip.ZipInputStream
 
@@ -50,6 +47,8 @@ class MainActivity : AppCompatActivity() {
                 val sortedList = imageUri.sortedBy {
                     it.lastPathSegment
                 }
+                chapter = 0
+                page = 0
                 getZipArchive(sortedList)
             }
         }
@@ -80,7 +79,8 @@ class MainActivity : AppCompatActivity() {
         val shrUri = tiny.getListString("READING_URI_ZIP")
         val savedImageSerializable = intent.getSerializableExtra("SavedImages")
         if (savedImageSerializable != null) {
-            val savedImageFileMainDir = (savedImageSerializable as File).listFiles().sortedBy { it.name }
+            val savedImageFileMainDir =
+                (savedImageSerializable as File).listFiles().sortedBy { it.name }
             for (i in savedImageFileMainDir) {
                 mangaUriArray.add(i.toUri())
                 pathArray.add(arrayListOf())
@@ -90,75 +90,50 @@ class MainActivity : AppCompatActivity() {
             }
             chapter = intent.getIntExtra("SavedMangaChapter", 0)
             mangaTitle.text = File(mangaUriArray[chapter].path!!).name.substringBeforeLast('.')
-            Log.d("MyTag","uri finished")
+            Log.d("MyTag", "uri finished")
             bitmapLazyLoader(chapter)
             setImage()
-
-        } else if (shrUri != null && false) {
-            val stringToUri = arrayListOf<Uri>()
-            try {
-                for (el in shrUri) {
-                    val streamFile = contentResolver.openInputStream(Uri.parse(el))
-                    stringToUri.add(Uri.parse(el))
-                }
-                page = tiny.getInt("READING_PAGE")
-                chapter = tiny.getInt("READING_CHAPTER")
-                getZipArchive(stringToUri, reloadPage = true)
-            } catch (e: FileNotFoundException) {
-                Log.d("MyTag", "Eroor loading")
-            }
+//        } else if (shrUri != null && false) {
+//            val stringToUri = arrayListOf<Uri>()
+//            try {
+//                for (el in shrUri) {
+//                    val streamFile = contentResolver.openInputStream(Uri.parse(el))
+//                    stringToUri.add(Uri.parse(el))
+//                }
+//                page = tiny.getInt("READING_PAGE")
+//                chapter = tiny.getInt("READING_CHAPTER")
+//                getZipArchive(stringToUri, reloadPage = true)
+//            } catch (e: FileNotFoundException) {
+//                Log.d("MyTag", "Eroor loading")
+//            }
+//        }
         }
     }
 
     private fun setImage() {
-//        if (reload) {
-//            if (uriArray.size > chapter && page < uriArray[chapter].size && page >= 0) {
-//                mangaImage.setImageURI(uriArray[chapter][page])
-////                Glide.with(this).load(uriArray[chapter][page]).dontTransform().into(mangaImage)
-//                pageTextView.text =
-//                    getString(R.string.page_text, page, uriArray[chapter].size - 1)
-//                pageTextView.visibility = View.VISIBLE
-//                scrollView.scrollTo(0, 0)
-//            } else if (page < 0 && chapter > 0) {
-//                chapter -= 1
-//                mangaTitle.text = File(mangaUriArray[chapter].path!!).name.substringBeforeLast('.')
-//                page = uriArray[chapter].size - 1
-//                setImage()
-//            } else if (chapter < uriArray.size - 1 && page > 0) {
-//                chapter += 1
-//                mangaTitle.text = File(mangaUriArray[chapter].path!!).name.substringBeforeLast('.')
-//                page = 0
-//                setImage()
-//            } else if (page < 0) {
-//                page = 0
-//            } else {
-//                page = uriArray[chapter].size - 1
-//            }
-//        } else {
-            if (bitmapArray.size > chapter && page < bitmapArray[chapter].size && page >= 0) {
-                mangaImage.setImageBitmap(bitmapArray[chapter][page])
-//                Log.d("MyTag","Not work:${pathArray.last()}")
-                pageTextView.text =
-                    getString(R.string.page_text, page, bitmapArray[chapter].size - 1)
-                pageTextView.visibility = View.VISIBLE
-                scrollView.scrollTo(0, 0)
-            } else if (page < 0 && chapter > 0) {
-                chapter -= 1
-                if(bitmapArray[chapter].size<1) bitmapLazyLoader(chapter)
-                mangaTitle.text = File(mangaUriArray[chapter].path!!).name.substringBeforeLast('.')
-                page = bitmapArray[chapter].size - 1
-                setImage()
-            } else if (chapter < bitmapArray.size - 1 && page > 0) {
-                chapter += 1
-                if(bitmapArray[chapter].size<1) bitmapLazyLoader(chapter)
-                mangaTitle.text = File(mangaUriArray[chapter].path!!).name.substringBeforeLast('.')
-                page = 0
-                setImage()
-            } else if (page < 0) {
-                page = 0
-            } else {
-                page = bitmapArray[chapter].size - 1
-            }
+        if (bitmapArray.size > chapter && page < bitmapArray[chapter].size && page >= 0) {
+            mangaImage.setImageBitmap(bitmapArray[chapter][page])
+            pageTextView.text =
+                getString(R.string.page_text, page, bitmapArray[chapter].size - 1)
+            pageTextView.visibility = View.VISIBLE
+            scrollView.scrollTo(0, 0)
+        } else if (page < 0 && chapter > 0) {
+            chapter -= 1
+            if (bitmapArray[chapter].size < 1) bitmapLazyLoader(chapter)
+            mangaTitle.text = File(mangaUriArray[chapter].path!!).name.substringBeforeLast('.')
+            page = bitmapArray[chapter].size - 1
+            setImage()
+        } else if (chapter < bitmapArray.size - 1 && page > 0) {
+            chapter += 1
+            if (bitmapArray[chapter].size < 1) bitmapLazyLoader(chapter)
+            mangaTitle.text = File(mangaUriArray[chapter].path!!).name.substringBeforeLast('.')
+            page = 0
+            setImage()
+        } else if (page < 0) {
+            page = 0
+        } else if(bitmapArray.size>0){
+            page = bitmapArray[chapter].size - 1
+        }
 //        }
     }
 
@@ -228,7 +203,7 @@ class MainActivity : AppCompatActivity() {
             while (ze != null) {
                 val p = BitmapFactory.decodeStream(zipFile, null, opts)
                 if (p != null) {
-                    bitmapArray[i].add(p)
+//                    bitmapArray[i].add(p)
                     saveImage(p, ze.name, File(uri[i].path).name)
                 }
                 ze = zipFile.nextEntry
@@ -251,10 +226,12 @@ class MainActivity : AppCompatActivity() {
         chapterDir.mkdir()
         val file = File(chapterDir, fileName)
         val fous = FileOutputStream(file)
-        bmp.compress(Bitmap.CompressFormat.PNG,100,fous)
+        Log.d("MyTag", "$fileName step 1")
+        bmp.compress(Bitmap.CompressFormat.JPEG, 80, fous)
+        Log.d("MyTag", "$fileName step 2")
         fous.close()
+        Log.d("MyTag", "$fileName step 3")
 //        MediaStore.Images.Media.insertImage(contentResolver,file.absolutePath,file.name,"")
-        Log.d("MyTag","$fileName created")
 //        file.writeBytes(bmp.convertToByteArray())
     }
 
@@ -280,22 +257,23 @@ class MainActivity : AppCompatActivity() {
             doubleBackToExitPressedOnce = false
         }, 2000)
     }
-    private fun bitmapLazyLoader(chapterPos:Int){
-        if(pathArray.size>0){
-            Log.d("MyTag","Bitmap lazy:$chapterPos")
+
+    private fun bitmapLazyLoader(chapterPos: Int) {
+        if (pathArray.size > 0) {
+            Log.d("MyTag", "Bitmap lazy:$chapterPos")
             if (bitmapArray.size < 1) {
-                for(i in mangaUriArray.indices){
+                for (i in mangaUriArray.indices) {
                     bitmapArray.add(arrayListOf())
                 }
-                Log.d("MyTag","bitmapArray.add")
+                Log.d("MyTag", "bitmapArray.add")
             }
             val opts = BitmapFactory.Options()
             opts.inSampleSize = 1
             opts.inPreferredConfig = Bitmap.Config.RGB_565
             for (i in pathArray[chapterPos]) {
-                val bmp = BitmapFactory.decodeFile(i,opts)
+                val bmp = BitmapFactory.decodeFile(i, opts)
                 bitmapArray[chapterPos].add(bmp)
-                Log.d("MyTag","Bmp: $i")
+                Log.d("MyTag", "Bmp: $i")
             }
         }
     }

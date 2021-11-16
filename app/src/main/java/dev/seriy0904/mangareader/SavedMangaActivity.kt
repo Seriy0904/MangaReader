@@ -85,10 +85,11 @@ class SavedMangaActivity : AppCompatActivity() {
             )
         }
         if (dirFile.parentFile == File(getExternalFilesDir(null), "Манга")) {
-            Log.d("MyTag", "True")
             val cloneModelList = modelList.clone() as ArrayList<FilesListModel>
             modelList.clear()
-            modelList.addAll(cloneModelList.sortedBy { it.mangaName })
+            modelList.addAll(cloneModelList.sortedBy {
+                Log.d("MyTag", "${it.mangaName.substringAfter(" Глава ").substringBeforeLast(' ').toInt()}")
+                it.mangaName.substringAfter("Глава ").substringBeforeLast(' ').toInt()})
         }
         adapter.setList(modelList)
     }
